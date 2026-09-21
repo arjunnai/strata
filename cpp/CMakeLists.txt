@@ -1,6 +1,6 @@
 add_library(
   strata_core
-  src/placeholder.cc
+  src/resource_vector.cc
 )
 
 target_include_directories(
