@@ -1,0 +1,23 @@
+# CMake
+build/
+cmake-build-*/
+
+# macOS
+.DS_Store
+
+# IDEs
+.vscode/
+.idea/
+
+# Compiled files
+*.o
+*.a
+*.so
+*.dylib
+
+# Temporary files
+*.swp
+*~
+
+#zip files
+*.zip
