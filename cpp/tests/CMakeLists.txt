@@ -1,6 +1,6 @@
 add_executable(
   strata_tests
-  smoke_test.cc
+  resource_vector_test.cc
 )
 
 target_link_libraries(
