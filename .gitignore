@@ -19,5 +19,15 @@ cmake-build-*/
 *.swp
 *~
 
+# Build artifacts
+build/
+
+# clangd / editor cache
+.cache/
+compile_commands.json
+
+# macOS
+.DS_Store
+
 #zip files
 *.zip
