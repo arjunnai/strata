@@ -23,5 +23,9 @@ bool strata::ResourceVector::workloadFit(const strata::ResourceVector& capacity)
 strata::ResourceVector strata::ResourceVector::operator-(
     const strata::ResourceVector& request) const {
   return strata::ResourceVector{cpu() - request.cpu(), memory() - request.memory(),
-                                       gpu() - request.gpu()};
+                                gpu() - request.gpu()};
+}
+strata::ResourceVector strata::ResourceVector::operator+(const ResourceVector& other) const {
+  return strata::ResourceVector{cpu() + other.cpu(), memory() + other.memory(),
+                                gpu() + other.gpu()};
 }

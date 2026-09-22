@@ -61,12 +61,20 @@ TEST(ResourceVectorTest, ExactZero) {
   EXPECT_EQ(result.gpu(), 0);
 }
 
-// TEST(ResourceVectorTest, Invalidsubtraction) {
-//   strata::ResourceVector request(4, 16, 1);
-//   strata::ResourceVector capacity(8, 20, 5);
-//   EXPECT_TRUE(request.workloadFit(capacity));
-//   strata::ResourceVector result = capacity - request;
-//   EXPECT_EQ(result.cpu(), 4);
-//   EXPECT_EQ(result.memory(), 4);
-//   EXPECT_EQ(result.gpu(), 4);
-// }
+TEST(ResourceVectorTest, NormalAddition) {
+  strata::ResourceVector A(2, 8, 0);
+  strata::ResourceVector B(4, 16, 1);
+  strata::ResourceVector result = A + B;
+  EXPECT_EQ(result.cpu(), 6);
+  EXPECT_EQ(result.memory(), 24);
+  EXPECT_EQ(result.gpu(), 1);
+}
+
+TEST(ResourceVectorTest, ZeroAddition) {
+  strata::ResourceVector A(2, 8, 0);
+  strata::ResourceVector B(0, 0, 0);
+  strata::ResourceVector result = A + B;
+  EXPECT_EQ(result.cpu(), 2);
+  EXPECT_EQ(result.memory(), 8);
+  EXPECT_EQ(result.gpu(), 0);
+}
