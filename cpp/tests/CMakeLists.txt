@@ -2,6 +2,7 @@ add_executable(
   strata_tests
   resource_vector_test.cc
   workload_test.cc
+  node_test.cc
 )
 
 target_link_libraries(

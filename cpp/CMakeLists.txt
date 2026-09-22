@@ -2,6 +2,7 @@ add_library(
   strata_core
   src/resource_vector.cc
   src/workload.cc
+  src/node.cc
 )
 
 target_include_directories(
