@@ -5,6 +5,7 @@ add_executable(
   node_test.cc
   scheduler_test.cc
   tenant_test.cc
+  control_plane_test.cc
 )
 
 target_link_libraries(

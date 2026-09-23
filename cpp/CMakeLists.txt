@@ -5,6 +5,7 @@ add_library(
   src/node.cc
   src/scheduler.cc
   src/tenant.cc
+  src/control_plane.cc
 )
 
 target_include_directories(
