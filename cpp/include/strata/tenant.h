@@ -1,6 +1,7 @@
 #pragma once
-#include "strata/resource_vector.h"
 #include <string>
+
+#include "strata/resource_vector.h"
 namespace strata {
 // how much is this owner allowed to use
 class Tenant {
@@ -10,6 +11,8 @@ class Tenant {
   const ResourceVector& quota() const;
   const ResourceVector& usage() const;
   bool canAdmit(const ResourceVector& req) const;
+  bool admit(const ResourceVector& req);
+  bool release(const ResourceVector& req);
 
  private:
   std::string id_;
