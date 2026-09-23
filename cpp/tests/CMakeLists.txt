@@ -4,6 +4,7 @@ add_executable(
   workload_test.cc
   node_test.cc
   scheduler_test.cc
+  tenant_test.cc
 )
 
 target_link_libraries(

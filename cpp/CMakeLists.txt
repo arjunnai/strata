@@ -4,6 +4,7 @@ add_library(
   src/workload.cc
   src/node.cc
   src/scheduler.cc
+  src/tenant.cc
 )
 
 target_include_directories(
