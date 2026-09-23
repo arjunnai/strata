@@ -14,3 +14,27 @@ TEST(TenantTest, StoresConstructorValues) {
   EXPECT_EQ(t1.usage().memory(), 0);
   EXPECT_EQ(t1.usage().gpu(), 0);
 }
+
+TEST(TenantTest, CanAdmitRequestWithinQuota) {
+  strata::Tenant tenant("tenant-a", strata::ResourceVector(8, 16, 1));
+
+  EXPECT_TRUE(tenant.canAdmit(strata::ResourceVector(8, 16, 1)));
+}
+
+TEST(TenantTest, RejectsRequestExceedingQuota) {
+  strata::Tenant tenant("tenant-a", strata::ResourceVector(8, 16, 1));
+
+  EXPECT_FALSE(tenant.canAdmit(strata::ResourceVector(9, 16, 1)));
+  EXPECT_FALSE(tenant.canAdmit(strata::ResourceVector(8, 17, 1)));
+  EXPECT_FALSE(tenant.canAdmit(strata::ResourceVector(8, 16, 2)));
+}
+
+TEST(TenantTest, CanAdmitDoesNotChangeUsage) {
+  strata::Tenant tenant("tenant-a", strata::ResourceVector(8, 16, 1));
+
+  EXPECT_TRUE(tenant.canAdmit(strata::ResourceVector(2, 4, 1)));
+  EXPECT_EQ(tenant.usage().cpu(), 0);
+  EXPECT_EQ(tenant.usage().memory(), 0);
+  EXPECT_EQ(tenant.usage().gpu(), 0);
+}
+

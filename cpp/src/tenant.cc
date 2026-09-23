@@ -9,3 +9,7 @@ const std::string& strata::Tenant::id() const { return id_; }
 
 const strata::ResourceVector& strata::Tenant::quota() const { return quota_; }
 const strata::ResourceVector& strata::Tenant::usage() const { return usage_; }
+bool strata::Tenant::canAdmit(const strata::ResourceVector& req) const {
+  ResourceVector res = usage_ + req;
+  return res.workloadFit(quota_);
+}

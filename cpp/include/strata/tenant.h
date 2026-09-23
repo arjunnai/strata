@@ -9,6 +9,7 @@ class Tenant {
   const std::string& id() const;
   const ResourceVector& quota() const;
   const ResourceVector& usage() const;
+  bool canAdmit(const ResourceVector& req) const;
 
  private:
   std::string id_;
