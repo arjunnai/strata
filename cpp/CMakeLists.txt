@@ -3,6 +3,7 @@ add_library(
   src/resource_vector.cc
   src/workload.cc
   src/node.cc
+  src/scheduler.cc
 )
 
 target_include_directories(

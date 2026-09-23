@@ -3,6 +3,7 @@ add_executable(
   resource_vector_test.cc
   workload_test.cc
   node_test.cc
+  scheduler_test.cc
 )
 
 target_link_libraries(
