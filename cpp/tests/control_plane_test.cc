@@ -93,3 +93,142 @@ TEST(ControlPlaneTest, DoesNotIncreaseUsageWhenSchedulingFails) {
   EXPECT_EQ(usage.gpu(), 0);
 }
 
+TEST(ControlPlaneTest, enqueueWorkload){
+  std::vector<strata::Tenant> tenantList;
+  tenantList.emplace_back("tenant-a", strata::ResourceVector(4, 8, 1));
+  std::vector<strata::Node> nodeList;
+  nodeList.emplace_back("node-a", strata::ResourceVector(8, 16, 2));
+
+  strata::Scheduler scheduler(nodeList);
+  strata::ControlPlane cp(tenantList, scheduler);
+  strata::Workload workload1("job-1", "tenant-a",
+                             strata::ResourceVector(1, 2, 0));
+  strata::Workload workload2("job-2", "tenant-a",
+                             strata::ResourceVector(2, 4, 1));
+
+  cp.enqueue(workload1);
+  cp.enqueue(workload2);
+
+  const auto& queue = cp.pending().at("tenant-a");
+
+  EXPECT_EQ(queue.size(), 2);
+  EXPECT_EQ(queue.front().id(), "job-1");
+  EXPECT_EQ(queue.back().id(), "job-2");
+}
+
+TEST(ControlPlaneTest, KeepsTenantQueuesSeparate) {
+  std::vector<strata::Tenant> tenantList;
+  tenantList.emplace_back("tenant-a", strata::ResourceVector(4, 8, 1));
+  tenantList.emplace_back("tenant-b", strata::ResourceVector(4, 8, 1));
+  std::vector<strata::Node> nodeList;
+  nodeList.emplace_back("node-a", strata::ResourceVector(8, 16, 2));
+
+  strata::Scheduler scheduler(nodeList);
+  strata::ControlPlane cp(tenantList, scheduler);
+
+  EXPECT_TRUE(cp.enqueue(strata::Workload(
+      "A1", "tenant-a", strata::ResourceVector(1, 1, 0))));
+  EXPECT_TRUE(cp.enqueue(strata::Workload(
+      "A2", "tenant-a", strata::ResourceVector(1, 1, 0))));
+  EXPECT_TRUE(cp.enqueue(strata::Workload(
+      "B1", "tenant-b", strata::ResourceVector(1, 1, 0))));
+
+  const auto& tenantAQueue = cp.pending().at("tenant-a");
+  const auto& tenantBQueue = cp.pending().at("tenant-b");
+  ASSERT_EQ(tenantAQueue.size(), 2);
+  ASSERT_EQ(tenantBQueue.size(), 1);
+  EXPECT_EQ(tenantAQueue.front().id(), "A1");
+  EXPECT_EQ(tenantAQueue.back().id(), "A2");
+  EXPECT_EQ(tenantBQueue.front().id(), "B1");
+}
+
+TEST(ControlPlaneTest, RejectsUnknownTenantEnqueue) {
+  std::vector<strata::Tenant> tenantList;
+  tenantList.emplace_back("tenant-a", strata::ResourceVector(4, 8, 1));
+  std::vector<strata::Node> nodeList;
+  nodeList.emplace_back("node-a", strata::ResourceVector(8, 16, 2));
+
+  strata::Scheduler scheduler(nodeList);
+  strata::ControlPlane cp(tenantList, scheduler);
+
+  EXPECT_FALSE(cp.enqueue(strata::Workload(
+      "job-unknown", "tenant-z", strata::ResourceVector(1, 1, 0))));
+}
+
+  TEST(ControlPlaneTest, DequeuesWorkloadsInRoundRobinOrder) {
+    std::vector<strata::Tenant> tenantList;
+    tenantList.emplace_back("tenant-a", strata::ResourceVector(4, 8, 1));
+    tenantList.emplace_back("tenant-b", strata::ResourceVector(4, 8, 1));
+    tenantList.emplace_back("tenant-c", strata::ResourceVector(4, 8, 1));
+    std::vector<strata::Node> nodeList;
+    nodeList.emplace_back("node-a", strata::ResourceVector(8, 16, 2));
+
+    strata::Scheduler scheduler(nodeList);
+    strata::ControlPlane cp(tenantList, scheduler);
+
+    EXPECT_TRUE(cp.enqueue(strata::Workload(
+      "A1", "tenant-a", strata::ResourceVector(1, 1, 0))));
+    EXPECT_TRUE(cp.enqueue(strata::Workload(
+      "A2", "tenant-a", strata::ResourceVector(1, 1, 0))));
+    EXPECT_TRUE(cp.enqueue(strata::Workload(
+      "B1", "tenant-b", strata::ResourceVector(1, 1, 0))));
+    EXPECT_TRUE(cp.enqueue(strata::Workload(
+      "C1", "tenant-c", strata::ResourceVector(1, 1, 0))));
+
+    auto first = cp.dequeueNextWorkload();
+    ASSERT_TRUE(first.has_value());
+    EXPECT_EQ(first->id(), "A1");
+
+    auto second = cp.dequeueNextWorkload();
+    ASSERT_TRUE(second.has_value());
+    EXPECT_EQ(second->id(), "B1");
+
+    auto third = cp.dequeueNextWorkload();
+    ASSERT_TRUE(third.has_value());
+    EXPECT_EQ(third->id(), "C1");
+
+    auto fourth = cp.dequeueNextWorkload();
+    ASSERT_TRUE(fourth.has_value());
+    EXPECT_EQ(fourth->id(), "A2");
+
+    EXPECT_FALSE(cp.dequeueNextWorkload().has_value());
+  }
+
+TEST(ControlPlaneTest, DispatchesPendingWorkloadWhenSchedulingSucceeds) {
+  std::vector<strata::Tenant> tenantList;
+  tenantList.emplace_back("tenant-a", strata::ResourceVector(4, 8, 1));
+  std::vector<strata::Node> nodeList;
+  nodeList.emplace_back("node-a", strata::ResourceVector(8, 16, 2));
+
+  strata::Scheduler scheduler(nodeList);
+  strata::ControlPlane cp(tenantList, scheduler);
+  cp.enqueue(strata::Workload(
+      "job-1", "tenant-a", strata::ResourceVector(2, 4, 1)));
+
+  strata::Node* node = cp.dispatchNext();
+
+  ASSERT_NE(node, nullptr);
+  EXPECT_EQ(node->id(), "node-a");
+  ASSERT_NE(cp.pending().find("tenant-a"), cp.pending().end());
+  EXPECT_TRUE(cp.pending().at("tenant-a").empty());
+}
+
+TEST(ControlPlaneTest, RequeuesPendingWorkloadWhenSchedulingFails) {
+  std::vector<strata::Tenant> tenantList;
+  tenantList.emplace_back("tenant-a", strata::ResourceVector(8, 8, 2));
+  std::vector<strata::Node> nodeList;
+  nodeList.emplace_back("node-a", strata::ResourceVector(2, 2, 1));
+
+  strata::Scheduler scheduler(nodeList);
+  strata::ControlPlane cp(tenantList, scheduler);
+  cp.enqueue(strata::Workload(
+      "job-1", "tenant-a", strata::ResourceVector(4, 4, 1)));
+
+  strata::Node* node = cp.dispatchNext();
+
+  EXPECT_EQ(node, nullptr);
+  const auto& queue = cp.pending().at("tenant-a");
+  ASSERT_EQ(queue.size(), 1);
+  EXPECT_EQ(queue.front().id(), "job-1");
+}
+

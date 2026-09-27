@@ -56,3 +56,33 @@ TEST(SchedulerTest, ReturnsNullWhenNoNodeCanFitWorkload) {
 
   EXPECT_EQ(scheduler.schedule(workload), nullptr);
 }
+
+TEST(SchedulerTest, BestFitChoosesNodeWithLeastRemainingCapacity) {
+  std::vector<strata::Node> nodeList;
+  nodeList.emplace_back("small", strata::ResourceVector(8, 8, 2));
+  nodeList.emplace_back("large", strata::ResourceVector(16, 16, 4));
+
+  strata::Scheduler scheduler(nodeList, strata::PlacementPolicy::BEST_FIT);
+  strata::Workload workload(
+      "job-best-fit", "team-a", strata::ResourceVector(4, 4, 1));
+
+  strata::Node* scheduledNode = scheduler.schedule(workload);
+
+  ASSERT_NE(scheduledNode, nullptr);
+  EXPECT_EQ(scheduledNode->id(), "small");
+}
+
+TEST(SchedulerTest, SpreadChoosesNodeWithMostRemainingCapacity) {
+  std::vector<strata::Node> nodeList;
+  nodeList.emplace_back("small", strata::ResourceVector(8, 8, 2));
+  nodeList.emplace_back("large", strata::ResourceVector(16, 16, 4));
+
+  strata::Scheduler scheduler(nodeList, strata::PlacementPolicy::SPREAD);
+  strata::Workload workload(
+      "job-spread", "team-a", strata::ResourceVector(4, 4, 1));
+
+  strata::Node* scheduledNode = scheduler.schedule(workload);
+
+  ASSERT_NE(scheduledNode, nullptr);
+  EXPECT_EQ(scheduledNode->id(), "large");
+}
